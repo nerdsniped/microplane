@@ -54,4 +54,19 @@ applications:
           - "RAILS_LOG_TO_STDOUT=true exec bundle exec puma -C $CONFIG --tag microplane:$MICROPLANE_APP_NAME -w $WORKERS -t 0:$THREADS -b unix:$MICROPLANE_SOCKET"
         working_directory: "~/Development/github.com/rubygems/rubygems.org"
         network_mode: socket
+  "microplane-dev":
+    enabled: true
+    name: microplane.dev
+    processes:
+      web:
+        launch_command:
+          - bash
+          - -eu
+          - -c
+          - "RAILS_LOG_TO_STDOUT=true exec bundle exec puma -C $CONFIG --tag microplane:$MICROPLANE_APP_NAME -w $WORKERS -t 0:$THREADS -b unix:$MICROPLANE_SOCKET"
+        working_directory: "~/Development/github.com/segiddins/microplane-dev"
+        network_mode: socket
+        tailscale:
+          machine_name: microplane-dev
+          allowed_tailnets: mine
 ```

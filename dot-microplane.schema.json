@@ -1,0 +1,170 @@
+{
+  "description": "Configuration file for microplane\n",
+  "properties": {
+    "applications": {
+      "additionalProperties": {
+        "description": "Configuration for a single application. Applications are a collection of processes that are managed together.\n",
+        "properties": {
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "processes": {
+            "additionalProperties": {
+              "description": "Configuration for a single process belonging to an application\n",
+              "properties": {
+                "depends_on": {
+                  "default": [],
+                  "items": {
+                    "description": "The name of another application, or an application/process, or `./$process` for a process in the current application",
+                    "pattern": "^(?:(\\.[a-zA-Z0-9_-]+|)/)[a-zA-Z0-9_-]+$",
+                    "type": "string",
+                    "uniqueItems": true
+                  },
+                  "maxItems": 0,
+                  "type": "array"
+                },
+                "eager_boot": {
+                  "default": false,
+                  "enum": [
+                    false
+                  ],
+                  "type": "boolean"
+                },
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "env": {
+                  "default": [],
+                  "items": {
+                    "properties": {
+                      "expand": {
+                        "default": true,
+                        "type": "boolean"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "nullable": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "value"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "keep_alive": {
+                  "default": false,
+                  "enum": [
+                    false
+                  ],
+                  "type": "boolean"
+                },
+                "launch_command": {
+                  "description": "The command to run. Note that env var expansion is not performed, and the command is run directly (i.e. not via a shell)\n",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minLength": 1,
+                  "type": "array"
+                },
+                "network_mode": {
+                  "default": "none",
+                  "enum": [
+                    "port",
+                    "socket",
+                    "none"
+                  ],
+                  "type": "string"
+                },
+                "tailscale": {
+                  "properties": {
+                    "allowed_tailnets": {
+                      "description": "The tailnets that this machine will accept connections from. If \"all\", the machine will allow connections from all tailnets (including the public). If \"mine\", the machine will allow connections from the tailnet that the machine is a member of.\n",
+                      "oneOf": [
+                        {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "enum": [
+                            "all",
+                            "mine"
+                          ],
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "enabled": {
+                      "default": true,
+                      "type": "boolean"
+                    },
+                    "machine_name": {
+                      "description": "The name to use for the tailscale machine.\n",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "machine_name",
+                    "allowed_tailnets"
+                  ],
+                  "type": "object"
+                },
+                "working_directory": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "launch_command",
+                "working_directory"
+              ],
+              "type": "object"
+            },
+            "default": {},
+            "maxProperties": 1,
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "default": {},
+      "description": "The applications that microplane manages.\n",
+      "type": "object"
+    },
+    "dns_address": {
+      "description": "The address to listen on for DNS requests. If not specified, DNS is served via a random free port.\n",
+      "type": "string"
+    },
+    "http_address": {
+      "description": "The address to listen on for HTTP requests. If not specified, HTTP is not served unless specified via launchd configuration.\n",
+      "type": "string"
+    },
+    "https_address": {
+      "description": "The address to listen on for HTTPS requests. If not specified, HTTPS is not served unless specified via launchd configuration.\n",
+      "type": "string"
+    },
+    "tlds": {
+      "additionalProperties": {
+        "properties": {
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "description": "The top-level domains that microplane manages. Each TLD will have DNS configured to point to the microplane server.\n",
+      "type": "object"
+    }
+  },
+  "type": "object"
+}

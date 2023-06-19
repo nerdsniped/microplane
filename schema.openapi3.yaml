@@ -1,0 +1,339 @@
+openapi: 3.0.0
+info:
+  title: microplane-api
+  version: 1.0.0
+components:
+  schemas:
+    AppStatus:
+      type: object
+      required:
+        - scheme
+        - address
+        - status
+        - log
+        - command
+        - env
+      properties:
+        scheme:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          enum:
+            - booting
+            - running
+            - dead
+            - unknown
+        log:
+          type: string
+        command:
+          type: array
+          items:
+            type: string
+        env:
+          type: object
+          additionalProperties:
+            type: string
+    Status:
+      type: object
+      required:
+        - status
+        - config
+        - apps
+      properties:
+        status:
+          type: integer
+        config:
+          $ref: "#/components/schemas/ConfigFile"
+        apps:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AppStatus"
+    ConfigFile:
+      description: >
+        Configuration file for microplane
+      type: object
+      properties:
+        http_address:
+          type: string
+          description: >
+            The address to listen on for HTTP requests.
+            If not specified, HTTP is not served unless specified via launchd configuration.
+        https_address:
+          type: string
+          description: >
+            The address to listen on for HTTPS requests.
+            If not specified, HTTPS is not served unless specified via launchd configuration.
+        tlds:
+          description: >
+            The top-level domains that microplane manages.
+            Each TLD will have DNS configured to point to the microplane server.
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              enabled:
+                type: boolean
+                default: true
+        dns_address:
+          description: >
+            The address to listen on for DNS requests.
+            If not specified, DNS is served via a random free port.
+          type: string
+        applications:
+          description: >
+            The applications that microplane manages.
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ConfigApplication"
+          nullable: false
+          default: {}
+    ConfigApplication:
+      description: >
+        Configuration for a single application.
+        Applications are a collection of processes that are managed together.
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        processes:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ConfigProcess"
+          maxProperties: 1
+          default: {}
+    ConfigProcess:
+      description: >
+        Configuration for a single process belonging to an application
+      type: object
+      required:
+        - launch_command
+        - working_directory
+      properties:
+        launch_command:
+          type: array
+          items:
+            type: string
+          minLength: 1
+          description: >
+            The command to run.
+            Note that env var expansion is not performed,
+            and the command is run directly (i.e. not via a shell)
+        env:
+          $ref: "#/components/schemas/ConfigEnvVars"
+        enabled:
+          type: boolean
+          default: true
+        working_directory:
+          type: string
+          minLength: 1
+        depends_on:
+          type: array
+          items:
+            type: string
+            pattern: "^(?:(\\.[a-zA-Z0-9_-]+|)/)[a-zA-Z0-9_-]+$"
+            description: The name of another application, or an application/process, or `./$process` for a process in the current application
+            uniqueItems: true
+          default: []
+          nullable: false
+          maxItems: 0
+        network_mode:
+          type: string
+          enum:
+            - port
+            - socket
+            - none
+          default: none
+        eager_boot:
+          type: boolean
+          default: false
+          enum:
+            - false
+        keep_alive:
+          type: boolean
+          default: false
+          enum:
+            - false
+        tailscale:
+          $ref: "#/components/schemas/ConfigTailscale"
+    ConfigEnvVars:
+      type: array
+      items:
+        $ref: "#/components/schemas/ConfigEnvVar"
+      default: []
+    ConfigEnvVar:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+          nullable: true
+        expand:
+          type: boolean
+          default: true
+          nullable: false
+    ConfigTailscale:
+      type: object
+      required:
+        - machine_name
+        - allowed_tailnets
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        machine_name:
+          type: string
+          description: >
+            The name to use for the tailscale machine.
+        allowed_tailnets:
+          description: >
+            The tailnets that this machine will accept connections from.
+            If "all", the machine will allow connections from all tailnets (including the public).
+            If "mine", the machine will allow connections from the tailnet that the machine is a member of.
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - $ref: "#/components/schemas/ConfigTailscaleAllowedTailnets"
+    ConfigTailscaleAllowedTailnets:
+      type: string
+      enum:
+        - all
+        - mine
+
+paths:
+  /status:
+    get:
+      summary: Get status
+      operationId: getStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+  /config_file:
+    get:
+      summary: Get config file
+      operationId: getConfigFile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigFile"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    example: "Config file not found"
+  /events:
+    get:
+      summary: Get events
+      operationId: getEvents
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - lines
+                properties:
+                  lines:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+  /apps/{name}/tail:
+    get:
+      summary: Log tail for the given app
+      operationId: getAppLogTail
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: "App not found"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+  /apps/{name}/launch:
+    post:
+      summary: Launch app
+      operationId: launchApp
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: "Created"
+        "404":
+          description: App not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+  /apps/{name}/kill:
+    post:
+      summary: Kill app
+      operationId: killApp
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Killing"
+        "404":
+          description: App not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
