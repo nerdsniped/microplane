@@ -1,0 +1,53 @@
+## Unreleased (2023-06-20)
+
+
+### Features
+
+* **api:** add /tailscale debug endpoint
+* **frontend:** add /debug/pprof routes
+* **frontend:** UI for launching / killing apps
+
+
+### Bug Fixes
+
+* **app:** avoid deadlocks when process fails before ready
+* **events:** avoid double newline in event log
+* **frontend:** Fix showing an app as Enabled when using default enabled alue
+* **tailscale:** more robust tailscale serving
+* **tomb:** better names for TombCloser
+
+## 0.0.9 (2023-06-19)
+
+
+### Features
+
+* Add support for tailscale
+* stop launching processes via a shell
+* **app:** more concise launch shell wrapper
+
+
+### Bug Fixes
+
+* **ConfigFile:** Remove unused Name field from ConfigApplication
+
+## 0.0.8 (2023-06-18)
+
+## 0.0.7 (2023-06-18)
+
+## 0.0.6 (2023-06-18)
+
+## 0.0.5 (2023-06-18)
+
+
+### Features
+
+* More robust app startup
+
+## 0.0.4 (2023-06-18)
+
+## 0.0.3 (2023-06-18)
+
+## 0.0.2 (2023-06-17)
+
+## 0.0.1 (2023-06-17)
+
