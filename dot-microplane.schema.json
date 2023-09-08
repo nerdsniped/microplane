@@ -132,6 +132,16 @@
             "default": {},
             "maxProperties": 1,
             "type": "object"
+          },
+          "timeouts": {
+            "properties": {
+              "idle": {
+                "default": "PT15M",
+                "format": "duration",
+                "type": "string"
+              }
+            },
+            "type": "object"
           }
         },
         "type": "object"

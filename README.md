@@ -78,6 +78,8 @@ applications:
             RAILS_LOG_TO_STDOUT=true exec bundle exec puma -C $CONFIG --tag microplane:$MICROPLANE_APP_NAME -w $WORKERS -t 0:$THREADS -b unix:$MICROPLANE_SOCKET
         working_directory: "~/Development/github.com/rubygems/rubygems.org"
         network_mode: socket
+    timeouts:
+      idle: PT60M
   "microplane-dev":
     enabled: true
     name: microplane.dev
@@ -129,4 +131,20 @@ applications:
         tailscale:
           machine_name: microplane-frontend
           allowed_tailnets: mine
+  "wedding":
+    processes:
+      next-dev:
+        launch_command:
+          - env
+          - -S
+          - ${SHELL}
+          - -lic
+          - |
+            set -euxo pipefail
+            yarn dev --port ${PORT}
+        working_directory: "~/Development/github.com/segiddins/hannah-and-sam.wedding"
+        network_mode: port
+        tailscale:
+          machine_name: wedding
+          allowed_tailnets: all
 ```

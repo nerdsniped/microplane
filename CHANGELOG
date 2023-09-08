@@ -1,4 +1,19 @@
-## Unreleased (2023-06-20)
+## Unreleased (2023-09-08)
+
+
+### Features
+
+* **config:** Add a timeouts.idle setting at the app level
+* **frontend:** Improved command styling on /status
+* **frontend:** Page for tailscale status
+
+
+### Bug Fixes
+
+* **tailscale:** "all" now alloww public access
+* **api:** Serve api responses with the proper CORS headers
+
+## 0.0.10 (2023-06-20)
 
 
 ### Features

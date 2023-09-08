@@ -104,6 +104,13 @@ components:
             $ref: "#/components/schemas/ConfigProcess"
           maxProperties: 1
           default: {}
+        timeouts:
+          type: object
+          properties:
+            idle:
+              type: string
+              format: duration
+              default: PT15M
     ConfigProcess:
       description: >
         Configuration for a single process belonging to an application
@@ -206,6 +213,76 @@ components:
       enum:
         - all
         - mine
+    TombResult:
+      type: object
+      required:
+        - running
+        - error
+        - children
+      properties:
+        running:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+        children:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/TombResult"
+    TailscaleIPNStateStatus:
+      type: object
+      required:
+        - version
+        - TUN
+        - backend_state
+        - auth_url
+        - health
+        - cert_domains
+      properties:
+        version:
+          type: string
+        TUN:
+          type: boolean
+        backend_state:
+          type: string
+          enum:
+            - NoState
+            - NeedsLogin
+            - NeedsMachineAuth
+            - Stopped
+            - Starting
+            - Running
+        auth_url:
+          type: string
+          format: uri
+        health:
+          type: array
+          items:
+            type: string
+        current_tailnet:
+          type: object
+          nullable: true
+          required:
+            - name
+            - magic_dns_suffix
+            - magic_dns_enabled
+          properties:
+            name:
+              type: string
+            magic_dns_suffix:
+              type: string
+            magic_dns_enabled:
+              type: boolean
+        cert_domains:
+          type: array
+          items:
+            type: string
+        peer:
+          type: object
+          additionalProperties: true
+        user:
+          type: object
+          additionalProperties: true
 
 paths:
   /status:
@@ -337,3 +414,51 @@ paths:
                 properties:
                   error:
                     type: string
+  /apps/{name}/restart:
+    post:
+      summary: Restart app
+      operationId: restartApp
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: "Restarting"
+        "404":
+          description: App not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+  /tomb:
+    get:
+      summary: Get tomb
+      operationId: getTomb
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TombResult"
+  /tailscale:
+    get:
+      summary: Get tailscale
+      operationId: getTailscale
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/TailscaleIPNStateStatus"
